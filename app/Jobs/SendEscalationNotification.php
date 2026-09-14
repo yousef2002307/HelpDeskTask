@@ -36,7 +36,7 @@ class SendEscalationNotification implements ShouldQueue
         NotificationLogRepositoryInterface $logRepo,
     ): void {
         $ticket = $ticketRepo->find($this->ticketId);
-
+        //check if ticket does not excist
         if (! $ticket) {
             Log::error("SendEscalationNotification: Ticket #{$this->ticketId} not found.");
 
