@@ -89,6 +89,7 @@ Each notification dispatch is handled asynchronously using Laravel Queued Jobs:
 - **Automated Exception Handling:** `ApiExceptionHandler::register($exceptions)` in `bootstrap/app.php` converts validation failures (422), rate limits (429), model missing (404), and unhandled server errors (500) into standardized JSON without boilerplate try/catch blocks.
 - **Loose Coupling & Mockability:** Services and notification channels depend exclusively on abstractions (`NotificationChannelInterface`, etc.) injected via constructor property promotion. Real drivers can be seamlessly swapped with test doubles or mocks in PHPUnit tests without tight coupling.
 
+
 ---
 
 ### 4. Database Design
