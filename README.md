@@ -87,7 +87,7 @@ Each notification dispatch is handled asynchronously using Laravel Queued Jobs:
 
 - **Standardized Response Envelope:** Powered by [`yousef-ahmed-abdalgawad/laravel-api-responder`](https://packagist.org/packages/yousef-ahmed-abdalgawad/laravel-api-responder) **(built by myself)**, all API endpoints return a predictable, unified payload (`status`, `success`, `message`, `data`, `pagination`, `meta`).
 - **Automated Exception Handling:** `ApiExceptionHandler::register($exceptions)` in `bootstrap/app.php` converts validation failures (422), rate limits (429), model missing (404), and unhandled server errors (500) into standardized JSON without boilerplate try/catch blocks.
-- **Loose Coupling & Mockability:** Services and notification channels depend exclusively on abstractions (`NotificationChannelInterface`, etc.) injected via constructor property promotion. Real drivers can be seamlessly swapped with test doubles or mocks in PHPUnit tests without tight coupling.
+- **Loose Coupling & Mockability:** Services and notification channels depend exclusively on abstractions (`NotificationChannelInterface`, etc.) injected via constructor property promotion. Real drivers can be  seamlessly swapped with test doubles or mocks in PHPUnit tests without tight coupling.
 
 
 ---
