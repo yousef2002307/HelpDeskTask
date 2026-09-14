@@ -94,51 +94,56 @@ This document provides the complete, unified technical documentation required by
 ```
 app/
 ├── Contracts/
-│   ├── Notifications/
-│   │   ├── NotificationChannelInterface.php        # Strategy contract for channel drivers
-│   │   └── NotificationChannelManagerInterface.php # Contract for notification dispatcher
-│   ├── Repositories/
-│   │   ├── NotificationLogRepositoryInterface.php  # Data access contract for audit logs
-│   │   ├── TicketEscalationRepositoryInterface.php # Data access contract for escalations
-│   │   └── TicketRepositoryInterface.php           # Data access contract for tickets
-│   └── Services/
-│       └── TicketEscalationServiceInterface.php    # Business orchestration contract
+│   ├── NotificationChannelInterface.php        # Strategy contract for channel drivers
+│   └── NotificationChannelManagerInterface.php # Contract for notification dispatcher
 ├── DTOs/
-│   └── EscalateTicketDTO.php                       # Strongly-typed data transfer object
+│   └── EscalateTicketDTO.php                   # Strongly-typed data transfer object
 ├── Enums/
-│   ├── NotificationStatus.php                      # Pending, Sent, Failed, Exhausted
-│   ├── TicketPriority.php                          # Low, Medium, High, Urgent
-│   └── TicketStatus.php                            # Open, InProgress, Escalated, Resolved, Closed
+│   ├── NotificationStatus.php                  # Pending, Sent, Failed, Exhausted
+│   ├── TicketPriority.php                      # Low, Medium, High, Urgent
+│   └── TicketStatus.php                        # Open, InProgress, Escalated, Resolved, Closed
 ├── Http/
 │   ├── Controllers/
-│   │   ├── Api/
-│   │   │   └── TicketEscalationController.php      # Presentation layer: uses ApiResponser
-│   │   └── TicketWebController.php                 # Presentation layer: Inertia.js React views
+│   │   └── Shared/
+│   │       ├── TicketController.php            # Presentation: ticket list/show + Inertia.js views
+│   │       └── TicketEscalationController.php  # Presentation: escalation API endpoint (ApiResponser)
 │   ├── Requests/
-│   │   └── EscalateTicketRequest.php               # Form Request: validation & DTO factory
+│   │   └── Shared/
+│   │       └── EscalateTicketRequest.php       # Form Request: validation & DTO factory
 │   └── Resources/
-│       ├── EscalationResource.php                  # API Resource: transforms escalation payload
-│       └── TicketResource.php                      # API Resource: transforms ticket payload
+│       └── Shared/
+│           ├── EscalationResource.php          # API Resource: transforms escalation payload
+│           ├── NotificationLogResource.php     # API Resource: transforms notification log payload
+│           └── TicketResource.php              # API Resource: transforms ticket payload
 ├── Jobs/
-│   └── SendEscalationNotification.php              # Infrastructure: queued job ($tries = 3, $backoff = [10, 60, 180])
+│   └── SendEscalationNotification.php          # Infrastructure: queued job ($tries = 3, $backoff = [10, 60, 180])
+├── Mail/
+│   └── TicketEscalatedMail.php                 # Mailable for escalation email notifications
 ├── Models/
 │   ├── Customer.php
 │   ├── NotificationLog.php
 │   ├── Ticket.php
-│   └── TicketEscalation.php
+│   ├── TicketEscalation.php
+│   └── User.php
 ├── Providers/
-│   └── EscalationServiceProvider.php               # Service Container bindings for interfaces
+│   └── EscalationServiceProvider.php           # Service Container bindings for interfaces
 ├── Repositories/
-│   ├── EloquentNotificationLogRepository.php       # Implements NotificationLogRepositoryInterface
-│   ├── EloquentTicketEscalationRepository.php      # Implements TicketEscalationRepositoryInterface
-│   └── EloquentTicketRepository.php                # Implements TicketRepositoryInterface
+│   └── Shared/
+│       ├── NotificationLogRepositoryInterface.php       # Data access contract for audit logs
+│       ├── TicketEscalationRepositoryInterface.php      # Data access contract for escalations
+│       ├── TicketRepositoryInterface.php                # Data access contract for tickets
+│       ├── EloquentNotificationLogRepository.php        # Implements NotificationLogRepositoryInterface
+│       ├── EloquentTicketEscalationRepository.php       # Implements TicketEscalationRepositoryInterface
+│       └── EloquentTicketRepository.php                 # Implements TicketRepositoryInterface
 └── Services/
-    ├── Notification/
-    │   ├── Channels/
-    │   │   ├── EmailChannel.php                    # Implements NotificationChannelInterface
-    │   │   └── SlackChannel.php                    # Implements NotificationChannelInterface
-    │   └── NotificationChannelManager.php          # Implements NotificationChannelManagerInterface
-    └── TicketEscalationService.php                 # Implements TicketEscalationServiceInterface
+    └── Shared/
+        ├── Notification/
+        │   ├── EmailChannel.php                # Implements NotificationChannelInterface
+        │   ├── SlackChannel.php                # Implements NotificationChannelInterface
+        │   ├── NotificationChannelManager.php  # Implements NotificationChannelManagerInterface
+        │   └── NotificationResult.php          # Value object for channel send results
+        ├── TicketEscalationService.php         # Implements TicketEscalationServiceInterface
+        └── TicketEscalationServiceInterface.php # Business orchestration contract
 ```
 
 ### Design Decisions

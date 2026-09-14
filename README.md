@@ -139,8 +139,11 @@ DB_PASSWORD=
 QUEUE_CONNECTION=database
 
 # Optional Notification Webhooks
-SLACK_NOTIFICATION_WEBHOOK_URL=
-NOTIFICATION_ESCALATION_EMAIL=supervisor@example.com
+SLACK_WEBHOOK_URL=                          # Slack Incoming Webhook URL
+SLACK_CHANNEL=#ticket-escalations           # Target Slack channel
+ESCALATION_EMAIL=supervisor@example.com     # Escalation email recipient
+ESCALATION_EMAIL_ENABLED=true
+ESCALATION_SLACK_ENABLED=true
 ```
 
 ---
