@@ -27,7 +27,7 @@ export default function Home() {
                             <span>→</span>
                         </Link>
                         <a
-                            href="/api/tickets"
+                            href="/docs"
                             target="_blank"
                             rel="noreferrer"
                             className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold text-sm transition"
