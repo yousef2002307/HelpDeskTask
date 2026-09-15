@@ -32,7 +32,7 @@ export default function Home() {
                             rel="noreferrer"
                             className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold text-sm transition"
                         >
-                            <span>API Reference</span>
+                            <span>API Documentation</span>
                             <span className="text-xs">↗</span>
                         </a>
                     </div>
