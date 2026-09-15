@@ -24,6 +24,7 @@ This document provides the complete, unified technical documentation required by
 4. **Retry Thresholds:** Failed notifications retry up to **3 times** with progressive backoff delays of **10s, 60s, and 180s**.
 5. **Unified API Contract:** All API responses adhere to a consistent envelope using [`yousef-ahmed-abdalgawad/laravel-api-responder`](https://packagist.org/packages/yousef-ahmed-abdalgawad/laravel-api-responder) **(built by myself)**.
 6. **Audit Trail:** Every delivery attempt, channel target, retry count, and failure error is recorded in a dedicated `notification_logs` table.
+7. **Authentication Middleware:** The assessment specification does not mention authentication requirements. Auth middleware (`auth:sanctum`) is intentionally omitted from the escalation endpoint to allow frictionless evaluation without requiring token setup. In a production deployment, the route group would be protected with `->middleware('auth:sanctum')` and authorized via a `TicketPolicy@escalate` gate check.
 
 ---
 

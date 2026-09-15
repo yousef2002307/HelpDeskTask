@@ -59,6 +59,12 @@ class TicketEscalationService implements TicketEscalationServiceInterface
     }
 
     /**
+     * Executes all configured notification channels synchronously and persists delivery results.
+     *
+     * This is the synchronous counterpart to the async queue path in escalate(). It is intentionally
+     * kept public so unit tests can drive channel dispatch and log assertions without a running queue
+     * worker, while production always goes through SendEscalationNotification jobs.
+     *
      * @return array<string, NotificationResult>
      */
     public function sendNotifications(Ticket $ticket): array

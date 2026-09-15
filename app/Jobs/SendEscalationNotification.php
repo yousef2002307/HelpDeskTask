@@ -21,7 +21,7 @@ class SendEscalationNotification implements ShouldQueue
 
     public int $tries = 3;
 
-    public int $backoff = 2;
+    public array $backoff = [10, 60, 180];
 
     public function __construct(
         public int $ticketId,
@@ -36,7 +36,7 @@ class SendEscalationNotification implements ShouldQueue
         NotificationLogRepositoryInterface $logRepo,
     ): void {
         $ticket = $ticketRepo->find($this->ticketId);
-        //check if ticket does not excist
+        // check if ticket does not excist
         if (! $ticket) {
             Log::error("SendEscalationNotification: Ticket #{$this->ticketId} not found.");
 
