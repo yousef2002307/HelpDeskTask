@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Shared\TicketController;
+use App\Http\Controllers\Shared\TicketDeescalationController;
 use App\Http\Controllers\Shared\TicketEscalationController;
 use Illuminate\Support\Facades\Route;
 
@@ -13,4 +14,8 @@ Route::prefix('tickets')->group(function (): void {
     Route::post('/{id}/escalate', TicketEscalationController::class)
         // ->middleware('auth:sanctum')
         ->name('api.tickets.escalate');
+
+    Route::post('/{id}/de-escalate', TicketDeescalationController::class)
+        // ->middleware('auth:sanctum')
+        ->name('api.tickets.deescalate');
 });

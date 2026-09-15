@@ -22,12 +22,17 @@ class EmailChannel implements NotificationChannelInterface
             ?? config('escalation.channels.email.default_recipient', 'escalations@helpdesk.florgics.com');
     }
 
-    public function send(Ticket $ticket, int $attempt = 1): NotificationResult
+    public function send(Ticket $ticket, int $attempt = 1, array $context = []): NotificationResult
     {
         $recipient = $this->recipient($ticket);
 
         try {
-            Mail::to($recipient)->send(new TicketEscalatedMail($ticket));
+            $isDeescalation = ($context['event'] ?? 'escalated') === 'deescalated';
+            $mailable = $isDeescalation
+                ? new \App\Mail\TicketDeescalatedMail($ticket, $context['reason'] ?? null)
+                : new TicketEscalatedMail($ticket);
+
+            Mail::to($recipient)->send($mailable);
 
             return NotificationResult::success($this->name());
         } catch (Throwable $e) {

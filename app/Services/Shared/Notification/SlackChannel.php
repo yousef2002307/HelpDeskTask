@@ -20,7 +20,7 @@ class SlackChannel implements NotificationChannelInterface
         return config('escalation.channels.slack.channel', '#ticket-escalations');
     }
 
-    public function send(Ticket $ticket, int $attempt = 1): NotificationResult
+    public function send(Ticket $ticket, int $attempt = 1, array $context = []): NotificationResult
     {
         $webhookUrl = config('escalation.channels.slack.webhook_url');
 
@@ -28,25 +28,41 @@ class SlackChannel implements NotificationChannelInterface
             return NotificationResult::failure($this->name(), 'Slack webhook URL is not configured.');
         }
 
+        $isDeescalation = ($context['event'] ?? 'escalated') === 'deescalated';
+
         try {
+            $headline = $isDeescalation
+                ? sprintf(':white_check_mark: Ticket De-escalated: #%d', $ticket->id)
+                : sprintf('🚨 Ticket Escalated: #%d', $ticket->id);
+
+            $summary = $isDeescalation
+                ? sprintf(':white_check_mark: *Ticket De-escalated: #%d - %s*', $ticket->id, $ticket->subject)
+                : sprintf(':rotating_light: *Ticket Escalated: #%d - %s*', $ticket->id, $ticket->subject);
+
+            $fields = [
+                ['type' => 'mrkdwn', 'text' => sprintf('*Subject:*\n%s', $ticket->subject)],
+                ['type' => 'mrkdwn', 'text' => sprintf('*Priority:*\n%s', strtoupper($ticket->priority->value))],
+                ['type' => 'mrkdwn', 'text' => sprintf('*Customer:*\n%s', $ticket->customer->name)],
+                ['type' => 'mrkdwn', 'text' => sprintf('*Status:*\n%s', strtoupper($ticket->status->value))],
+            ];
+
+            if ($isDeescalation && ! empty($context['reason'])) {
+                $fields[] = ['type' => 'mrkdwn', 'text' => sprintf('*De-escalation Reason:*\n%s', $context['reason'])];
+            }
+
             $payload = [
-                'text' => sprintf(':rotating_light: *Ticket Escalated: #%d - %s*', $ticket->id, $ticket->subject),
+                'text' => $summary,
                 'blocks' => [
                     [
                         'type' => 'header',
                         'text' => [
                             'type' => 'plain_text',
-                            'text' => sprintf('🚨 Ticket Escalated: #%d', $ticket->id),
+                            'text' => $headline,
                         ],
                     ],
                     [
                         'type' => 'section',
-                        'fields' => [
-                            ['type' => 'mrkdwn', 'text' => sprintf('*Subject:*\n%s', $ticket->subject)],
-                            ['type' => 'mrkdwn', 'text' => sprintf('*Priority:*\n%s', strtoupper($ticket->priority->value))],
-                            ['type' => 'mrkdwn', 'text' => sprintf('*Customer:*\n%s', $ticket->customer->name)],
-                            ['type' => 'mrkdwn', 'text' => sprintf('*Status:*\n%s', strtoupper($ticket->status->value))],
-                        ],
+                        'fields' => $fields,
                     ],
                 ],
             ];

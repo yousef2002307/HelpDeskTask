@@ -1,6 +1,7 @@
 import { Head, Link } from '@inertiajs/react';
 import { useEscalateTicket } from '../../hooks/useEscalateTicket';
 import Alert from '../../components/ui/Alert';
+import ConfirmModal from '../../components/ui/ConfirmModal';
 import TicketHeader from '../../components/tickets/TicketHeader';
 import TicketMetaGrid from '../../components/tickets/TicketMetaGrid';
 import EscalationReasonInput from '../../components/tickets/EscalationReasonInput';
@@ -8,9 +9,35 @@ import EscalationHistory from '../../components/tickets/EscalationHistory';
 import NotificationLogs from '../../components/tickets/NotificationLogs';
 
 export default function Show({ ticket: initialTicket }) {
-    const { ticket, reason, setReason, isEscalating, feedback, handleEscalate } = useEscalateTicket(initialTicket);
+    const {
+        ticket,
+        reason,
+        setReason,
+        isEscalating,
+        isDeescalating,
+        feedback,
+        pendingAction,
+        requestEscalate,
+        requestDeescalate,
+        cancelAction,
+        confirmAction,
+    } = useEscalateTicket(initialTicket);
 
     const hasAuditData = ticket.escalations?.length > 0 || ticket.notification_logs?.length > 0;
+
+    const modalConfig = pendingAction === 'escalate'
+        ? {
+            title: 'Escalate this ticket?',
+            description: 'This will mark the ticket as Escalated and trigger notifications to all configured channels (Email & Slack).',
+            confirmText: 'Yes, Escalate',
+            variant: 'danger',
+        }
+        : {
+            title: 'De-escalate this ticket?',
+            description: 'This will revert the ticket to its previous status and send de-escalation notifications to all configured channels.',
+            confirmText: 'Yes, De-escalate',
+            variant: 'warning',
+        };
 
     return (
         <div className="min-h-screen bg-slate-50 text-slate-900">
@@ -43,7 +70,13 @@ export default function Show({ ticket: initialTicket }) {
                 <Alert type={feedback?.type} message={feedback?.message} />
 
                 <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden p-6 sm:p-8 space-y-6">
-                    <TicketHeader ticket={ticket} isEscalating={isEscalating} onEscalate={handleEscalate} />
+                    <TicketHeader
+                        ticket={ticket}
+                        isEscalating={isEscalating}
+                        onEscalate={requestEscalate}
+                        isDeescalating={isDeescalating}
+                        onDeescalate={requestDeescalate}
+                    />
                     <TicketMetaGrid ticket={ticket} />
 
                     <div className="space-y-2">
@@ -53,8 +86,12 @@ export default function Show({ ticket: initialTicket }) {
                         </div>
                     </div>
 
-                    {ticket.is_escalatable && ticket.status !== 'escalated' && (
-                        <EscalationReasonInput value={reason} onChange={setReason} />
+                    {(ticket.is_escalatable || ticket.status === 'escalated') && (
+                        <EscalationReasonInput
+                            value={reason}
+                            onChange={setReason}
+                            isEscalated={ticket.status === 'escalated'}
+                        />
                     )}
                 </div>
 
@@ -65,6 +102,17 @@ export default function Show({ ticket: initialTicket }) {
                     </div>
                 )}
             </main>
+
+            <ConfirmModal
+                open={pendingAction !== null}
+                title={modalConfig.title}
+                description={modalConfig.description}
+                confirmText={modalConfig.confirmText}
+                cancelText="Cancel"
+                variant={modalConfig.variant}
+                onConfirm={confirmAction}
+                onCancel={cancelAction}
+            />
         </div>
     );
 }

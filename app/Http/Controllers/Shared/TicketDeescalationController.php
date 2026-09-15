@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\Shared;
 
-use App\DTOs\EscalateTicketDTO;
+use App\DTOs\DeescalateTicketDTO;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Shared\EscalateTicketRequest;
+use App\Http\Requests\Shared\DeescalateTicketRequest;
 use App\Http\Resources\Shared\TicketResource;
 use App\Services\Shared\TicketEscalationServiceInterface;
 use DomainException;
@@ -15,9 +15,9 @@ use YousefAhmedAbdalgawad\ApiResponder\Traits\ApiResponser;
 /**
  * @group Ticket Escalation
  *
- * APIs for managing ticket escalation workflows and triggering incident alerts.
+ * APIs for managing ticket escalation and de-escalation workflows.
  */
-class TicketEscalationController extends Controller
+class TicketDeescalationController extends Controller
 {
     use ApiResponser;
 
@@ -26,42 +26,39 @@ class TicketEscalationController extends Controller
     ) {}
 
     /**
-     * Escalate a Ticket
+     * De-escalate a Ticket
      *
-     * Escalates an open or in-progress ticket, sets its status to "escalated",
-     * records the escalation timestamp and reason, and automatically dispatches
-     * multi-channel notifications (Email & Slack) with up to 3 automatic retries.
+     * De-escalates an escalated ticket back to its previous status (e.g. open or in_progress),
+     * clears the escalation timestamp, records an audit log entry, and automatically
+     * dispatches de-escalation notifications (Email & Slack) with automatic retries.
      *
-     * If an authenticated user is present (e.g. via Sanctum), they are automatically
-     * recorded as the escalator. Otherwise, `escalated_by` can be optionally supplied.
+     * @urlParam id integer required The ID of the ticket to de-escalate. Example: 1
      *
-     * @urlParam id integer required The ID of the ticket to escalate. Example: 1
-     *
-     * @response 200 scenario="Successful escalation" {
+     * @response 200 scenario="Successful de-escalation" {
      *   "success": true,
      *   "status": 200,
-     *   "message": "Ticket escalated successfully. Notifications dispatched.",
+     *   "message": "Ticket de-escalated successfully. Notifications dispatched.",
      *   "data": {
      *     "id": 1,
      *     "subject": "Payment Gateway Returning 502 Bad Gateway",
-     *     "description": "Transactions are dropping during peak hours.",
-     *     "status": "escalated",
-     *     "status_label": "Escalated",
+     *     "status": "open",
+     *     "status_label": "Open",
      *     "priority": "urgent",
      *     "priority_label": "Urgent",
-     *     "is_escalatable": false,
+     *     "is_escalatable": true,
+     *     "is_deescalatable": false,
      *     "customer": {
      *       "id": 1,
      *       "name": "Acme Corporation",
      *       "email": "support@acme.corp"
      *     },
-     *     "escalated_at": "2026-09-14T15:10:00.000000Z"
+     *     "escalated_at": null
      *   }
      * }
-     * @response 422 scenario="Ticket is already escalated, closed, or resolved" {
+     * @response 422 scenario="Ticket is not in escalated status" {
      *   "success": false,
      *   "status": 422,
-     *   "message": "Ticket #1 cannot be escalated because its status is 'escalated'. Only open or in-progress tickets may be escalated."
+     *   "message": "Ticket #1 cannot be de-escalated because its status is 'open'. Only escalated tickets may be de-escalated."
      * }
      * @response 404 scenario="Ticket not found" {
      *   "success": false,
@@ -69,24 +66,24 @@ class TicketEscalationController extends Controller
      *   "message": "Ticket #999999 not found."
      * }
      */
-    public function __invoke(EscalateTicketRequest $request, int $id): Response
+    public function __invoke(DeescalateTicketRequest $request, int $id): Response
     {
         $validated = $request->validated();
 
         // Auth-aware attribution: prioritize authenticated user if present
-        if ($request->user() && empty($validated['escalated_by'])) {
-            $validated['escalated_by'] = $request->user()->id;
+        if ($request->user() && empty($validated['deescalated_by'])) {
+            $validated['deescalated_by'] = $request->user()->id;
         }
 
-        $dto = EscalateTicketDTO::fromArray($id, $validated);
+        $dto = DeescalateTicketDTO::fromArray($id, $validated);
 
         try {
-            $ticket = $this->escalationService->escalate($dto);
+            $ticket = $this->escalationService->deescalate($dto);
             $ticket->load(['escalations', 'notificationLogs']);
 
             return $this->successResponse(
                 new TicketResource($ticket),
-                'Ticket escalated successfully. Notifications dispatched.',
+                'Ticket de-escalated successfully. Notifications dispatched.',
                 200,
             );
         } catch (ModelNotFoundException) {

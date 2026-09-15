@@ -19,6 +19,7 @@ class Ticket extends Model
         'subject',
         'description',
         'status',
+        'previous_status',
         'priority',
         'customer_id',
         'agent_id',
@@ -29,6 +30,7 @@ class Ticket extends Model
     {
         return [
             'status' => TicketStatus::class,
+            'previous_status' => TicketStatus::class,
             'priority' => TicketPriority::class,
             'escalated_at' => 'datetime',
         ];
@@ -57,5 +59,10 @@ class Ticket extends Model
     public function isEscalatable(): bool
     {
         return $this->status->isEscalatable();
+    }
+
+    public function isDeescalatable(): bool
+    {
+        return $this->status->isDeescalatable();
     }
 }

@@ -2,7 +2,7 @@ import StatusBadge from '../ui/StatusBadge';
 import PriorityBadge from '../ui/PriorityBadge';
 import Spinner from '../ui/Spinner';
 
-export default function TicketHeader({ ticket, isEscalating, onEscalate }) {
+export default function TicketHeader({ ticket, isEscalating, onEscalate, isDeescalating, onDeescalate }) {
     return (
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-slate-100 pb-6">
             <div className="space-y-2">
@@ -18,12 +18,31 @@ export default function TicketHeader({ ticket, isEscalating, onEscalate }) {
                 </h1>
             </div>
 
-            <div className="shrink-0">
+            <div className="shrink-0 flex items-center gap-2">
                 {ticket.status === 'escalated' ? (
-                    <div className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-amber-50 text-amber-800 border border-amber-300 text-sm font-semibold shadow-xs">
-                        <span>⚠️</span>
-                        <span>Ticket is Escalated</span>
-                    </div>
+                    <>
+                        <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-amber-50 text-amber-800 border border-amber-300 text-xs font-semibold shadow-xs">
+                            <span>⚠️</span>
+                            <span>Escalated</span>
+                        </div>
+                        <button
+                            onClick={onDeescalate}
+                            disabled={isDeescalating}
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white text-xs font-bold shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                        >
+                            {isDeescalating ? (
+                                <>
+                                    <Spinner />
+                                    De-escalating...
+                                </>
+                            ) : (
+                                <>
+                                    <span>↩️</span>
+                                    <span>De-escalate Ticket</span>
+                                </>
+                            )}
+                        </button>
+                    </>
                 ) : ticket.is_escalatable ? (
                     <button
                         onClick={onEscalate}

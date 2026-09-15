@@ -48,7 +48,7 @@ class NotificationChannelManagerTest extends TestCase
                 return 'whatsapp';
             }
 
-            public function send(Ticket $ticket, int $attempt = 1): NotificationResult
+            public function send(Ticket $ticket, int $attempt = 1, array $context = []): NotificationResult
             {
                 return NotificationResult::success('whatsapp');
             }

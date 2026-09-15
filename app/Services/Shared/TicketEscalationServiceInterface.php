@@ -10,6 +10,8 @@ interface TicketEscalationServiceInterface
 {
     public function escalate(EscalateTicketDTO $dto): Ticket;
 
+    public function deescalate(\App\DTOs\DeescalateTicketDTO $dto): Ticket;
+
     /**
      * @return array<string, NotificationResult>
      */

@@ -13,6 +13,7 @@ This document provides the complete, unified technical documentation required by
    - **Email:** Should notifications target the assigned agent, the customer, or a configurable escalation email distribution list?
    - **Slack:** Should notifications post to a shared channel (e.g., `#urgent-escalations`) via webhook, or directly direct-message (DM) the agent?
 5. **Dead-Letter Alerts:** When all 3 notification attempts fail for a channel, should an internal alert be raised to system administrators?
+6. **De-escalation Lifecycle & Target Status:** When a ticket is de-escalated, should it revert back to its exact pre-escalation status (e.g., `open` vs. `in_progress`), or always reset to a fixed status? Does de-escalation require a mandatory reason, and should notifications be dispatched to the same channels and stakeholders to confirm resolution of the escalation?
 
 ---
 
@@ -25,6 +26,7 @@ This document provides the complete, unified technical documentation required by
 5. **Unified API Contract:** All API responses adhere to a consistent envelope using [`yousef-ahmed-abdalgawad/laravel-api-responder`](https://packagist.org/packages/yousef-ahmed-abdalgawad/laravel-api-responder) **(built by myself)**.
 6. **Audit Trail:** Every delivery attempt, channel target, retry count, and failure error is recorded in a dedicated `notification_logs` table.
 7. **Authentication Middleware:** The assessment specification does not mention authentication requirements. Auth middleware (`auth:sanctum`) is intentionally omitted from the escalation endpoint to allow frictionless evaluation without requiring token setup. In a production deployment, the route group would be protected with `->middleware('auth:sanctum')` and authorized via a `TicketPolicy@escalate` gate check.
+8. **De-escalation Handling & State Restoration:** A ticket can be de-escalated when its status is `Escalated`. Upon de-escalation (`POST /api/tickets/{id}/de-escalate`), the ticket's state safely reverts back to its recorded `previous_status` (e.g. `in_progress` or `open`), clears `escalated_at`, records an audit trail entry prefixed with `[De-escalated]` in `ticket_escalations`, and dispatches asynchronous multi-channel de-escalation notifications (Email & Slack) via `SendDeescalationNotification` with the exact same 3-retry resilience policy.
 
 ---
 
@@ -47,14 +49,15 @@ This document provides the complete, unified technical documentation required by
 - `subject` (`VARCHAR(255)`, NOT NULL)
 - `description` (`TEXT`, NULLABLE)
 - `status` (`VARCHAR(50)`, NOT NULL, Default: `'open'`)
+- **`previous_status`** (`VARCHAR(20)`, NULLABLE) — *Added to store pre-escalation status for state restoration upon de-escalation*
 - `priority` (`VARCHAR(50)`, NOT NULL, Default: `'medium'`)
 - `customer_id` (`BIGINT UNSIGNED`, FK ➔ `customers.id`)
 - `agent_id` (`BIGINT UNSIGNED`, NULLABLE, FK ➔ `users.id`)
-- **`escalated_at`** (`TIMESTAMP`, NULLABLE) — *Added to capture escalation timestamp*
+- **`escalated_at`** (`TIMESTAMP`, NULLABLE) — *Added to capture escalation timestamp; reset to null upon de-escalation*
 - `created_at`, `updated_at` (`TIMESTAMP`, NULLABLE)
 
 #### 2. New: `ticket_escalations`
-*Immutable historical log of escalation events.*
+*Immutable historical log of escalation and de-escalation events.*
 - `id` (`BIGINT UNSIGNED`, PK, Auto-Increment)
 - `ticket_id` (`BIGINT UNSIGNED`, FK ➔ `tickets.id`, ON DELETE CASCADE)
 - `escalated_by` (`BIGINT UNSIGNED`, NULLABLE, FK ➔ `users.id`, ON DELETE SET NULL)
@@ -95,10 +98,11 @@ This document provides the complete, unified technical documentation required by
 ```
 app/
 ├── Contracts/
-│   ├── NotificationChannelInterface.php        # Strategy contract for channel drivers
+│   ├── NotificationChannelInterface.php        # Strategy contract for channel drivers (with context support)
 │   └── NotificationChannelManagerInterface.php # Contract for notification dispatcher
 ├── DTOs/
-│   └── EscalateTicketDTO.php                   # Strongly-typed data transfer object
+│   ├── DeescalateTicketDTO.php                 # Data transfer object for ticket de-escalation
+│   └── EscalateTicketDTO.php                   # Strongly-typed data transfer object for escalation
 ├── Enums/
 │   ├── NotificationStatus.php                  # Pending, Sent, Failed, Exhausted
 │   ├── TicketPriority.php                      # Low, Medium, High, Urgent
@@ -107,9 +111,11 @@ app/
 │   ├── Controllers/
 │   │   └── Shared/
 │   │       ├── TicketController.php            # Presentation: ticket list/show + Inertia.js views
+│   │       ├── TicketDeescalationController.php# Presentation: ticket de-escalation API endpoint
 │   │       └── TicketEscalationController.php  # Presentation: escalation API endpoint (ApiResponser)
 │   ├── Requests/
 │   │   └── Shared/
+│   │       ├── DeescalateTicketRequest.php     # Form Request: de-escalation validation & DTO factory
 │   │       └── EscalateTicketRequest.php       # Form Request: validation & DTO factory
 │   └── Resources/
 │       └── Shared/
@@ -117,13 +123,15 @@ app/
 │           ├── NotificationLogResource.php     # API Resource: transforms notification log payload
 │           └── TicketResource.php              # API Resource: transforms ticket payload
 ├── Jobs/
+│   ├── SendDeescalationNotification.php        # Infrastructure: queued job for de-escalation ($tries = 3, $backoff)
 │   └── SendEscalationNotification.php          # Infrastructure: queued job ($tries = 3, $backoff = [10, 60, 180])
 ├── Mail/
+│   ├── TicketDeescalatedMail.php               # Mailable for de-escalation notifications
 │   └── TicketEscalatedMail.php                 # Mailable for escalation email notifications
 ├── Models/
 │   ├── Customer.php
 │   ├── NotificationLog.php
-│   ├── Ticket.php
+│   ├── Ticket.php                              # Includes previous_status & isDeescalatable helper
 │   ├── TicketEscalation.php
 │   └── User.php
 ├── Providers/
@@ -132,18 +140,18 @@ app/
 │   └── Shared/
 │       ├── NotificationLogRepositoryInterface.php       # Data access contract for audit logs
 │       ├── TicketEscalationRepositoryInterface.php      # Data access contract for escalations
-│       ├── TicketRepositoryInterface.php                # Data access contract for tickets
+│       ├── TicketRepositoryInterface.php                # Data access contract for tickets (with deescalate)
 │       ├── EloquentNotificationLogRepository.php        # Implements NotificationLogRepositoryInterface
 │       ├── EloquentTicketEscalationRepository.php       # Implements TicketEscalationRepositoryInterface
 │       └── EloquentTicketRepository.php                 # Implements TicketRepositoryInterface
 └── Services/
     └── Shared/
         ├── Notification/
-        │   ├── EmailChannel.php                # Implements NotificationChannelInterface
-        │   ├── SlackChannel.php                # Implements NotificationChannelInterface
+        │   ├── EmailChannel.php                # Implements NotificationChannelInterface (Escalate + Deescalate)
+        │   ├── SlackChannel.php                # Implements NotificationChannelInterface (Escalate + Deescalate)
         │   ├── NotificationChannelManager.php  # Implements NotificationChannelManagerInterface
         │   └── NotificationResult.php          # Value object for channel send results
-        ├── TicketEscalationService.php         # Implements TicketEscalationServiceInterface
+        ├── TicketEscalationService.php         # Implements TicketEscalationServiceInterface (escalate + deescalate)
         └── TicketEscalationServiceInterface.php # Business orchestration contract
 ```
 

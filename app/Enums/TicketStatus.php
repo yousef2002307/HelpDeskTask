@@ -28,4 +28,9 @@ enum TicketStatus: string
             default => false,
         };
     }
+
+    public function isDeescalatable(): bool
+    {
+        return $this === self::Escalated;
+    }
 }

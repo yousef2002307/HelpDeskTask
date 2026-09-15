@@ -25,6 +25,7 @@ class TicketResource extends JsonResource
             'priority' => $this->priority->value,
             'priority_label' => $this->priority->label(),
             'is_escalatable' => $this->isEscalatable(),
+            'is_deescalatable' => $this->isDeescalatable(),
             'customer' => [
                 'id' => $this->customer->id,
                 'name' => $this->customer->name,

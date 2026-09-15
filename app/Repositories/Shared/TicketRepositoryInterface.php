@@ -18,5 +18,7 @@ interface TicketRepositoryInterface
 
     public function all(): Collection;
 
-    public function updateStatus(Ticket $ticket, TicketStatus $status, ?DateTimeInterface $escalatedAt = null): bool;
+    public function updateStatus(Ticket $ticket, TicketStatus $status, ?DateTimeInterface $escalatedAt = null, ?TicketStatus $previousStatus = null): bool;
+
+    public function deescalate(Ticket $ticket, TicketStatus $targetStatus): bool;
 }

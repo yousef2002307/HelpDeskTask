@@ -9,5 +9,5 @@ interface NotificationChannelInterface
 {
     public function name(): string;
 
-    public function send(Ticket $ticket, int $attempt = 1): NotificationResult;
+    public function send(Ticket $ticket, int $attempt = 1, array $context = []): NotificationResult;
 }

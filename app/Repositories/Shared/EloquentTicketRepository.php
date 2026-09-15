@@ -32,14 +32,30 @@ class EloquentTicketRepository implements TicketRepositoryInterface
         return Ticket::with(['customer', 'agent'])->latest('id')->get();
     }
 
-    public function updateStatus(Ticket $ticket, TicketStatus $status, ?DateTimeInterface $escalatedAt = null): bool
-    {
+    public function updateStatus(
+        Ticket $ticket,
+        TicketStatus $status,
+        ?DateTimeInterface $escalatedAt = null,
+        ?TicketStatus $previousStatus = null,
+    ): bool {
         $attributes = ['status' => $status];
 
         if ($escalatedAt !== null) {
             $attributes['escalated_at'] = $escalatedAt;
         }
 
+        if ($previousStatus !== null) {
+            $attributes['previous_status'] = $previousStatus;
+        }
+
         return $ticket->update($attributes);
+    }
+
+    public function deescalate(Ticket $ticket, TicketStatus $targetStatus): bool
+    {
+        return $ticket->update([
+            'status' => $targetStatus,
+            'escalated_at' => null,
+        ]);
     }
 }

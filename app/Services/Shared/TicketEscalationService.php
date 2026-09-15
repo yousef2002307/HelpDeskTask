@@ -41,6 +41,7 @@ class TicketEscalationService implements TicketEscalationServiceInterface
                 ticket: $ticket,
                 status: TicketStatus::Escalated,
                 escalatedAt: now(),
+                previousStatus: $ticket->status,
             );
 
             $this->escalationRepository->create([
@@ -53,6 +54,43 @@ class TicketEscalationService implements TicketEscalationServiceInterface
         // Dispatch background notification jobs for all configured channels
         foreach ($this->channelManager->channels() as $channel) {
             SendEscalationNotification::dispatch($ticket->id, $channel->name());
+        }
+
+        return $this->ticketRepository->findOrFail($ticket->id);
+    }
+
+    public function deescalate(\App\DTOs\DeescalateTicketDTO $dto): Ticket
+    {
+        $ticket = $this->ticketRepository->findOrFail($dto->ticketId);
+
+        if (! $ticket->isDeescalatable()) {
+            throw new DomainException(sprintf(
+                'Ticket #%d cannot be de-escalated because its status is \'%s\'. Only escalated tickets may be de-escalated.',
+                $ticket->id,
+                $ticket->status->value,
+            ));
+        }
+
+        $targetStatus = $ticket->previous_status ?? TicketStatus::Open;
+
+        DB::transaction(function () use ($ticket, $dto, $targetStatus): void {
+            $this->ticketRepository->deescalate(
+                ticket: $ticket,
+                targetStatus: $targetStatus,
+            );
+
+            $reason = '[De-escalated] ' . ($dto->reason ?: 'Reverted to ' . $targetStatus->label());
+
+            $this->escalationRepository->create([
+                'ticket_id' => $ticket->id,
+                'escalated_by' => $dto->deescalatedBy,
+                'reason' => $reason,
+            ]);
+        });
+
+        // Dispatch background de-escalation notification jobs for all configured channels
+        foreach ($this->channelManager->channels() as $channel) {
+            \App\Jobs\SendDeescalationNotification::dispatch($ticket->id, $channel->name(), $dto->reason);
         }
 
         return $this->ticketRepository->findOrFail($ticket->id);
