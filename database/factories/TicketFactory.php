@@ -17,12 +17,12 @@ class TicketFactory extends Factory
     public function definition(): array
     {
         return [
-            'subject'      => fake()->sentence(6),
-            'description'  => fake()->paragraph(),
-            'status'       => fake()->randomElement(TicketStatus::cases())->value,
-            'priority'     => fake()->randomElement(TicketPriority::cases())->value,
-            'customer_id'  => Customer::factory(),
-            'agent_id'     => null,
+            'subject' => fake()->sentence(6),
+            'description' => fake()->paragraph(),
+            'status' => fake()->randomElement(TicketStatus::cases())->value,
+            'priority' => fake()->randomElement(TicketPriority::cases())->value,
+            'customer_id' => Customer::factory(),
+            'agent_id' => null,
             'escalated_at' => null,
         ];
     }

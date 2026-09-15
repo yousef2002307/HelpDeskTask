@@ -7,6 +7,7 @@ use App\Contracts\NotificationChannelManagerInterface;
 use App\Enums\NotificationStatus;
 use App\Enums\TicketStatus;
 use App\Jobs\SendEscalationNotification;
+use App\Mail\TicketEscalatedMail;
 use App\Models\NotificationLog;
 use App\Models\Ticket;
 use App\Repositories\Shared\NotificationLogRepositoryInterface;
@@ -128,7 +129,7 @@ class NotificationRetryTest extends TestCase
         Mail::fake();
 
         $ticket = Ticket::factory()->create(['status' => TicketStatus::Escalated]);
-        $channel = new EmailChannel();
+        $channel = new EmailChannel;
 
         $result = $channel->send($ticket, 1);
 
@@ -136,7 +137,7 @@ class NotificationRetryTest extends TestCase
         $this->assertSame('email', $result->channel);
         $this->assertNull($result->errorMessage);
 
-        Mail::assertSent(\App\Mail\TicketEscalatedMail::class);
+        Mail::assertSent(TicketEscalatedMail::class);
     }
 
     public function test_slack_channel_sends_http_post_and_handles_success(): void
@@ -149,7 +150,7 @@ class NotificationRetryTest extends TestCase
         ]);
 
         $ticket = Ticket::factory()->create(['status' => TicketStatus::Escalated]);
-        $channel = new SlackChannel();
+        $channel = new SlackChannel;
 
         $result = $channel->send($ticket, 1);
 
@@ -171,7 +172,7 @@ class NotificationRetryTest extends TestCase
         ]);
 
         $ticket = Ticket::factory()->create(['status' => TicketStatus::Escalated]);
-        $channel = new SlackChannel();
+        $channel = new SlackChannel;
 
         $result = $channel->send($ticket, 1);
 

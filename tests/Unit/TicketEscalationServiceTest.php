@@ -6,9 +6,9 @@ use App\Contracts\NotificationChannelInterface;
 use App\Contracts\NotificationChannelManagerInterface;
 use App\DTOs\EscalateTicketDTO;
 use App\Enums\NotificationStatus;
-use App\Enums\TicketPriority;
 use App\Enums\TicketStatus;
 use App\Models\Customer;
+use App\Models\NotificationLog;
 use App\Models\Ticket;
 use App\Models\TicketEscalation;
 use App\Repositories\Shared\NotificationLogRepositoryInterface;
@@ -54,7 +54,7 @@ class TicketEscalationServiceTest extends TestCase
                     && $attributes['reason'] === 'Critical payment issue'
                     && $attributes['escalated_by'] === 42;
             }))
-            ->willReturn(new TicketEscalation());
+            ->willReturn(new TicketEscalation);
 
         $channel = $this->createMock(NotificationChannelInterface::class);
         $channel->method('name')->willReturn('slack');
@@ -159,7 +159,7 @@ class TicketEscalationServiceTest extends TestCase
                     $this->assertSame('Webhook offline', $errorMessage);
                 }
 
-                return new \App\Models\NotificationLog();
+                return new NotificationLog;
             });
 
         $service = new TicketEscalationService(

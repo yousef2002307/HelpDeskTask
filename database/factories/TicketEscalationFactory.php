@@ -15,9 +15,9 @@ class TicketEscalationFactory extends Factory
     public function definition(): array
     {
         return [
-            'ticket_id'    => Ticket::factory()->open(),
+            'ticket_id' => Ticket::factory()->open(),
             'escalated_by' => User::factory(),
-            'reason'       => fake()->optional()->sentence(),
+            'reason' => fake()->optional()->sentence(),
         ];
     }
 }

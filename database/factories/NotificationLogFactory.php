@@ -15,13 +15,13 @@ class NotificationLogFactory extends Factory
     public function definition(): array
     {
         return [
-            'ticket_id'     => Ticket::factory()->open(),
-            'channel'       => fake()->randomElement(['email', 'slack']),
-            'recipient'     => fake()->safeEmail(),
-            'attempt'       => 1,
-            'status'        => NotificationStatus::Pending->value,
+            'ticket_id' => Ticket::factory()->open(),
+            'channel' => fake()->randomElement(['email', 'slack']),
+            'recipient' => fake()->safeEmail(),
+            'attempt' => 1,
+            'status' => NotificationStatus::Pending->value,
             'error_message' => null,
-            'sent_at'       => null,
+            'sent_at' => null,
         ];
     }
 
@@ -38,8 +38,8 @@ class NotificationLogFactory extends Factory
     public function exhausted(): static
     {
         return $this->state([
-            'status'        => NotificationStatus::Exhausted->value,
-            'attempt'       => 3,
+            'status' => NotificationStatus::Exhausted->value,
+            'attempt' => 3,
             'error_message' => 'Max retries reached',
         ]);
     }

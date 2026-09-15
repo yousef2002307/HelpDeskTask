@@ -12,7 +12,7 @@ class NotificationChannelManagerTest extends TestCase
 {
     public function test_can_register_and_retrieve_channels(): void
     {
-        $manager = new NotificationChannelManager();
+        $manager = new NotificationChannelManager;
 
         $emailChannel = $this->createMock(NotificationChannelInterface::class);
         $emailChannel->method('name')->willReturn('email');
@@ -30,7 +30,7 @@ class NotificationChannelManagerTest extends TestCase
 
     public function test_returns_null_when_channel_is_not_registered(): void
     {
-        $manager = new NotificationChannelManager();
+        $manager = new NotificationChannelManager;
 
         $this->assertNull($manager->channel('whatsapp'));
         $this->assertNull($manager->channel('unknown'));
@@ -38,10 +38,11 @@ class NotificationChannelManagerTest extends TestCase
 
     public function test_can_register_future_custom_channel(): void
     {
-        $manager = new NotificationChannelManager();
+        $manager = new NotificationChannelManager;
 
         // Custom future WhatsApp channel
-        $whatsAppChannel = new class implements NotificationChannelInterface {
+        $whatsAppChannel = new class implements NotificationChannelInterface
+        {
             public function name(): string
             {
                 return 'whatsapp';
